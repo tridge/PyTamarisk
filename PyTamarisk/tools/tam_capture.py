@@ -3,7 +3,7 @@
 import numpy, os, time, threading, Queue, cv, sys
 
 from PyTamarisk.tamarisk import tamarisk
-from PyTamarisk.TAMSerial import TAMSerial
+from PyTamarisk import TAMSerial
 
 from optparse import OptionParser
 parser = OptionParser("tam_capture.py [options]")
@@ -44,7 +44,7 @@ def TAMSetup(dev):
 
 ser = None
 if opts.port:
-  ser = TAMSerial(opts.port, baudrate=opts.baudrate, timeout=2)
+  ser = TAMSerial.TAMSerial(opts.port, baudrate=opts.baudrate, timeout=2)
   TAMSetup(ser)
   
 h = tamarisk.open()
