@@ -8,7 +8,18 @@ ext_modules = []
 
 extra_compile_args=["-std=gnu99", "-O3"]
 
-aravis_inst_path = '/home/tridge/project/UAV/prefix'
+paths = ['/home/tridge/project/UAV/prefix',
+         '/home/falcon/prefix',
+         '/usr/local']
+aravis_inst_path = None
+for p in paths:
+    if os.path.exists(os.path.join(p, 'include/aravis-0.4')):
+        aravis_inst_path = p
+        break
+
+if aravis_inst_path is None:
+    print("Failed to find aravis libraries")
+
 
 tamarisk = Extension('PyTamarisk.tamarisk.tamarisk',
                      sources = ['PyTamarisk/tamarisk/tamarisk_py.c'],
