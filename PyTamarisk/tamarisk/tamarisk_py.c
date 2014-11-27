@@ -27,8 +27,6 @@ static ArvStream *stream;
 static const uint32_t width = 640;
 static const uint32_t height = 480;
 
-static bool save_pgm_frame(const uint8_t *data0);
-
 /*
   write one camera device register
  */
@@ -120,9 +118,10 @@ tamarisk_capture(PyObject *self, PyObject *args)
 	ArvBuffer *buffer;
 	buffer = arv_stream_timeout_pop_buffer(stream, timeout_ms*1000);
 	if (buffer != NULL) {
-		if (buffer->status == ARV_BUFFER_STATUS_SUCCESS && buffer->data != NULL) {
-                        unsigned BPP = ARV_PIXEL_FORMAT_BIT_PER_PIXEL(buffer->pixel_format);
-                        save_pgm_frame(buffer->data);
+		if (buffer->status == ARV_BUFFER_STATUS_SUCCESS && 
+                    buffer->data != NULL &&
+                    ARV_PIXEL_FORMAT_BIT_PER_PIXEL(buffer->pixel_format) == 16) {
+                    memcpy(buf, buffer->data, width*height*2);
                 }
 		arv_stream_push_buffer (stream, buffer);
 	}
@@ -153,78 +152,69 @@ tamarisk_close(PyObject *self, PyObject *args)
 }
 
 
-
-static const char *save_basename(void)
+/* low level save routine */
+static int _save_pgm(const char *filename, unsigned w, unsigned h, unsigned stride,
+		     const char *data)
 {
-    struct timeval tv;
-    struct tm *tm;
-    time_t t;
-    unsigned hundredths;
-    static char namebuf[100];
+	int fd = open(filename, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	int ret;
 
-    gettimeofday(&tv, NULL);
-    t = tv.tv_sec;
-    tm = gmtime(&t);
-    hundredths = tv.tv_usec / 10000;
-
-    strftime(namebuf, sizeof(namebuf), "raw%Y%m%d%H%M%S", tm);
-    snprintf(namebuf+strlen(namebuf), sizeof(namebuf)-strlen(namebuf), "%02uZ", hundredths);
-    return namebuf;
+	if (fd == -1) {
+		return -1;
+	}
+	dprintf(fd,"P5\n%u %u\n%u\n", 
+		w, h, stride==w?255:65535);
+	if (__BYTE_ORDER == __LITTLE_ENDIAN && stride == w*2) {
+		char *data2 = malloc(w*h*2);
+		swab(data, data2, w*h*2);
+		ret = write(fd, data2, h*stride);
+		free(data2);
+	} else {
+		ret = write(fd, data, h*stride);
+	}
+	if (ret != h*stride) {
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	return 0;
 }
 
 /*
-  save a .pgm greyscale image, auto-incrementing frame number
+  save a pgm image 
  */
-static bool save_pgm_frame(const uint8_t *data0)
+static PyObject *
+save_pgm(PyObject *self, PyObject *args)
 {
-	int fd, ret;
-	char *filename = NULL;
-	uint16_t *data;
-        uint32_t size = width*height*2;
+	int status;
+	const char *filename;
+	unsigned w, h, stride;
+	PyArrayObject* array = NULL;
 
-	if (asprintf(&filename, "%s.pgm", save_basename()) <= 0) {
-		return false;
+	if (!PyArg_ParseTuple(args, "sO", &filename, &array))
+		return NULL;
+
+	CHECK_CONTIGUOUS(array);
+
+	w = PyArray_DIM(array, 1);
+	h = PyArray_DIM(array, 0);
+	stride = PyArray_STRIDE(array, 0);
+
+	Py_BEGIN_ALLOW_THREADS;
+	status = _save_pgm(filename, w, h, stride, PyArray_DATA(array));
+	Py_END_ALLOW_THREADS;
+	if (status != 0) {
+		PyErr_SetString(TamariskError, "pgm save failed");
+		return NULL;
 	}
-
-	printf("saving %s shape=%ux%u\n", 
-	       filename,
-	       (unsigned)width,
-	       (unsigned)height);
-  
-	fd = open(filename, O_WRONLY|O_CREAT|O_TRUNC, 0644);
-	if (fd == -1) {
-		perror(filename);
-		free(filename);
-		return false;
-	}
-	free(filename);
-	dprintf(fd,"P5\n%u %u\n%u\n", 
-		width, height, 65535);
-
-	data = malloc(size);
-	memcpy(data, data0, size);
-
-	// fix byte order if needed fpr pgm file
-	if (__BYTE_ORDER == __LITTLE_ENDIAN) {
-	  // needs byte swap
-	  swab(data, data, size);
-	}
-
-	ret = write(fd, data, size);
-	free(data);
-	if (ret != size) {
-		close(fd);
-		printf("write failed ret=%d\n", ret);
-		return false;
-	}
-	close(fd);
-	return true;
+	Py_RETURN_NONE;
 }
 
 static PyMethodDef TamariskMethods[] = {
   {"open", tamarisk_open, METH_VARARGS, "Open a tamarisk camera. Returns handle"},
   {"close", tamarisk_close, METH_VARARGS, "Close device."},
   {"capture", tamarisk_capture, METH_VARARGS, "Capture an image"},
+  {"save_pgm", save_pgm, METH_VARARGS, "Save to a pgm gile"},
   {NULL, NULL, 0, NULL}        /* Terminus */
 };
 

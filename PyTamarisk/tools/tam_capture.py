@@ -11,8 +11,12 @@ parser = OptionParser("tam_capture.py [options]")
 h = tamarisk.open()
 
 im = numpy.zeros((480,640),dtype='uint16')
+counter = 0
 while True:
   tamarisk.capture(0, 1000, im)
-  print("Captured")
+  fname = 'raw%u.pgm' % counter
+  counter += 1
+  tamarisk.save_pgm(fname, im)
+  print("Captured %s" % fname)
   
 tamarisk.close(h)
