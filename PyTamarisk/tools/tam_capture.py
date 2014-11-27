@@ -22,24 +22,24 @@ parser.add_option("--colorization-enable", type='int', default=0)
 
 def TAMSetup(dev):
   '''setup camera via serial'''
-  dev.send_message(MSG_VER_GET)
+  dev.send_message(TAMSerial.MSG_VER_GET)
   dev.wait_ack()
-  dev.send_uint16(MSG_COLORIZATION_ENABLE, opts.colorization_enable)
+  dev.send_uint16(TAMSerial.MSG_COLORIZATION_ENABLE, opts.colorization_enable)
   dev.wait_ack()
-  dev.send_uint16(MSG_VIDEO_ORIENTATION, opts.video_orientation)
+  dev.send_uint16(TAMSerial.MSG_VIDEO_ORIENTATION, opts.video_orientation)
   dev.wait_ack()
-  dev.send_uint16(MSG_VIDEO_SOURCE, opts.video_source)
+  dev.send_uint16(TAMSerial.MSG_VIDEO_SOURCE, opts.video_source)
   dev.wait_ack()
-  dev.send_uint16(MSG_AGC_MODE, opts.agc_mode)
+  dev.send_uint16(TAMSerial.MSG_AGC_MODE, opts.agc_mode)
   dev.wait_ack()
-  dev.send_uint16(MSG_ICE_ENABLE, opts.ice_enable)
+  dev.send_uint16(TAMSerial.MSG_ICE_ENABLE, opts.ice_enable)
   dev.wait_ack()
-  dev.send_uint16(MSG_ICE_STRENGTH, opts.ice_strength)
+  dev.send_uint16(TAMSerial.MSG_ICE_STRENGTH, opts.ice_strength)
   dev.wait_ack()
   if opts.white_hot == 1:
-    dev.send_message(MSG_WHITE_HOT)
+    dev.send_message(TAMSerial.MSG_WHITE_HOT)
   else:
-    dev.send_message(MSG_BLACK_HOT)
+    dev.send_message(TAMSerial.MSG_BLACK_HOT)
   dev.wait_ack()
 
 ser = None
