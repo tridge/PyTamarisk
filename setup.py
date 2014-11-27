@@ -13,7 +13,7 @@ aravis_inst_path = '/home/tridge/project/UAV/prefix'
 tamarisk = Extension('PyTamarisk.tamarisk.tamarisk',
                      sources = ['PyTamarisk/tamarisk/tamarisk_py.c'],
                      libraries = ['aravis-0.4'],
-                     library_dirs = ['prefix/lib'],
+                     library_dirs = ['%s/lib' % aravis_inst_path],
                      extra_compile_args=extra_compile_args + ['-O0', '-I%s/include/aravis-0.4' % aravis_inst_path,
                                                               '-I/usr/include/glib-2.0',
                                                               '-I/usr/lib/x86_64-linux-gnu/glib-2.0/include',
