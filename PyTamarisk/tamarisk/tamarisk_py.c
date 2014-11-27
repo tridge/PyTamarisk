@@ -54,10 +54,10 @@ tamarisk_open(PyObject *self, PyObject *args)
     cam_write_register(camera, 0x11030, 0);
     cam_write_register(camera, 0x13100, 0);
 
-    arv_camera_set_region(camera, 0, 0, width, height);
-    //arv_camera_set_binning (camera, arv_option_horizontal_binning, arv_option_vertical_binning);
-    //arv_camera_set_exposure_time (camera, arv_option_exposure_time_us);
-    //arv_camera_set_gain (camera, arv_option_gain);
+    arv_camera_set_region(camera, 0, 0, -1, -1);
+    arv_camera_set_binning (camera, -1, -1);
+    arv_camera_set_exposure_time (camera, -1);
+    arv_camera_set_gain (camera, -1);
     
     printf("vendor name         = %s\n", arv_camera_get_vendor_name (camera));
     printf("model name          = %s\n", arv_camera_get_model_name (camera));
@@ -118,9 +118,9 @@ tamarisk_capture(PyObject *self, PyObject *args)
 
 	Py_BEGIN_ALLOW_THREADS;
 	ArvBuffer *buffer;
-	buffer = arv_stream_try_pop_buffer(stream);
+	buffer = arv_stream_timeout_pop_buffer(stream, timeout_ms*1000);
 	if (buffer != NULL) {
-		if (buffer->status == ARV_BUFFER_STATUS_SUCCESS) {
+		if (buffer->status == ARV_BUFFER_STATUS_SUCCESS && buffer->data != NULL) {
                         unsigned BPP = ARV_PIXEL_FORMAT_BIT_PER_PIXEL(buffer->pixel_format);
                         save_pgm_frame(buffer->data);
                 }
