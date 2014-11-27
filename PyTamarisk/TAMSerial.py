@@ -435,12 +435,12 @@ class TAMSerial:
 
     def send_uint16(self, msg_id, value):
         '''send a uint16 command'''
-        dev.send_message(msg_id, struct.pack('>H', value))
+        self.send_message(msg_id, struct.pack('>H', value))
 
     def wait_ack(self):
         '''wait for message ack'''
         while True:
-            msg = dev.receive_message()
+            msg = self.receive_message()
             if msg is None:
                 break
             print(str(msg))
