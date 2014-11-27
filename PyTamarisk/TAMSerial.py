@@ -35,6 +35,8 @@ MSG_AGC_GAIN_LIMIT      = 0xD1
 MSG_AGC_GAIN_FLATTEN    = 0xD2
 MSG_BLACK_HOT           = 0x28
 MSG_WHITE_HOT           = 0x29
+MSG_TCOMP_DISABLE       = 0x18
+MSG_TCOMP_STATUS        = 0x10
 
 # video orientations
 VID_ORIENT_NORMAL = 0
@@ -98,21 +100,16 @@ class TAMDescriptor:
         fmt = self.msg_format
         fmt = fmt.replace('#', "%u" % len(buf))
         size = struct.calcsize(fmt)
-        if size > len(buf):
+        if size != len(buf):
             raise TAMError("%s INVALID_SIZE=%u expected=%u" % (self.name, len(buf), size))
         f1 = list(struct.unpack(fmt, buf[:size]))
         i = 0
         while i < len(f1):
             field = fields.pop(0)
             msg._fields[field] = f1[i]
-            buf = buf[size:]
-            if len(buf) == 0:
-                break
             i += 1
 
         msg._unpacked = True
-        if len(buf) != 0:
-            raise TAMError("EXTRA_BYTES=%u" % len(buf))
         return
 
     def pack(self, msg, msg_id=None):
@@ -171,7 +168,10 @@ msg_types = {
     MSG_AGC_GAIN_LIMIT      : TAMDescriptor('MSG_AGC_GAIN_LIMIT', '>H', ['value']),
     MSG_AGC_GAIN_FLATTEN    : TAMDescriptor('MSG_AGC_GAIN_FLATTEN', '>H', ['value']),
     MSG_BLACK_HOT           : TAMDescriptor('MSG_BLACK_HOT', '', ['']),
-    MSG_WHITE_HOT           : TAMDescriptor('MSG_WHITE_HOT', '', [''])
+    MSG_WHITE_HOT           : TAMDescriptor('MSG_WHITE_HOT', '', ['']),
+    MSG_TCOMP_STATUS        : TAMDescriptor('MSG_TCOMP_STATUS', '>BBHHHHHH',
+                                            ['nranges', 'flags', 'range', 'min',
+                                             'max', 'tcomp', 'reserved1', 'reserved2'])
 }
 
 
@@ -430,13 +430,26 @@ class TAMSerial:
         msg._buf += payload
         cs = msg.checksum(msg._buf[:])
         msg._buf += struct.pack('>B', cs)
-        print(msg)
+        try:
+            print(msg)
+        except Exception:
+            pass
         self.send(msg)
 
     def send_uint16(self, msg_id, value):
         '''send a uint16 command'''
         self.send_message(msg_id, struct.pack('>H', value))
 
+    def get_tcomp(self):
+        '''send a uint16 command'''
+        self.send_message(MSG_TCOMP_STATUS)
+        msg = self.receive_message()
+        if msg is None:
+            return None
+        if msg.msg_id() != MSG_TCOMP_STATUS:
+            return None
+        return msg
+    
     def wait_ack(self):
         '''wait for message ack'''
         while True:
