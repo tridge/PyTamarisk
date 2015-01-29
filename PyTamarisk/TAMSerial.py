@@ -473,7 +473,7 @@ if __name__ == '__main__':
     parser.add_option("--baudrate", type='int',
                       help="serial baud rate", default=57600)
     parser.add_option("--video-orientation", type='int', default=VID_ORIENT_NORMAL)
-    parser.add_option("--video-source", type='int', default=VID_SRC_AGC)
+    parser.add_option("--video-source", type='int', default=VID_SRC_14)
     parser.add_option("--agc-mode", type='int', default=AGC_MODE_AUTO)
     parser.add_option("--ice-enable", type='int', default=1)
     parser.add_option("--ice-strength", type='int', default=3)
