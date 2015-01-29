@@ -1,6 +1,6 @@
 from setuptools import setup, Extension
 import numpy as np
-import platform, os
+import platform, os, sys
 
 version = '0.1.0'
 
@@ -19,7 +19,7 @@ for p in paths:
 
 if aravis_inst_path is None:
     print("Failed to find aravis libraries")
-
+    sys.exit(1)
 
 tamarisk = Extension('PyTamarisk.tamarisk.tamarisk',
                      sources = ['PyTamarisk/tamarisk/tamarisk_py.c'],
