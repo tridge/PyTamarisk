@@ -66,7 +66,12 @@ tlast = 0
 counter = 0
 tcomp = None
 while True:
-  tamarisk.capture(0, 1000, im)
+  try:
+    tamarisk.capture(0, 1000, im)
+  except Exception as e:
+    print(e)
+    time.sleep(0.5)
+    continue
   if time.time() - tlast < 1.0/opts.rate:
     continue
   tlast = time.time()
