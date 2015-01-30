@@ -112,12 +112,13 @@ tamarisk_capture(PyObject *self, PyObject *args)
 	}
 
 	void* buf = PyArray_DATA(array);
-	int status;
+	int status = -1;
 
 	Py_BEGIN_ALLOW_THREADS;
 	ArvBuffer *buffer;
 	buffer = arv_stream_timeout_pop_buffer(stream, timeout_ms*1000);
 	if (buffer != NULL) {
+		status = buffer->status;
 		if (buffer->status == ARV_BUFFER_STATUS_SUCCESS && 
                     buffer->data != NULL &&
                     ARV_PIXEL_FORMAT_BIT_PER_PIXEL(buffer->pixel_format) == 16) {
